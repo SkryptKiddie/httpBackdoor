@@ -11,6 +11,7 @@ Linux backdoor written with the HTTPRequestHandler library.
 - `pip3 install pyinstaller`
 - `pyinstaller --onefile httpBackdoor.py`
 - the file in the `dist` directory is your binary that will run on the machine
+- you can also use the pyinstaller `-key` argument to [encrypt the file](https://pyinstaller.readthedocs.io/en/stable/usage.html#encrypting-python-bytecode), making decompilation more difficult.
 
 # usage
 ## basic data gathering
